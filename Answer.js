@@ -3,7 +3,7 @@
 const $ = function (selector) {
   let elements = [];
 
-  //Split the selectors. First separat by space, getting all the descendant selectors
+  //Split the selectors. First separate by space, getting all the descendant selectors
   const selectors = selector.split(" ");
   selectors.forEach((descendant, i) => {
     //now, nested in that array another a array with  classnames, tagname and id, the aray should look like [[parent],[descendantTagName, descendantID, descendantClassName],etc]
@@ -11,26 +11,37 @@ const $ = function (selector) {
   });
   // console.log(selectors);
   let currentElements = [document];
-  selectors.forEach((des, i) => {
-    currentElements.forEach((el, i) => {
-      console.log(i, el);
-
-      des.forEach((sel, i) => {
-        if (i === 0) {
-          elements = singleSelector(sel, el);
-        } else {
-          //filter out the elements that do not satisfy all the conditions
-          elements = elements.filter((e) =>
-            singleSelector(sel, el).includes(e),
-          );
-        }
-      });
+  selectors.forEach((adjacentSelectorGroup) => {
+    console.log("current elements", currentElements);
+    let res = [];
+    currentElements.forEach((parent) => {
+      res = checkAdjacentSelectors(adjacentSelectorGroup, parent);
+      console.log(
+        parent,
+        checkAdjacentSelectors(adjacentSelectorGroup, parent),
+      );
+      currentElements.concat(res);
+      //console.log(adjacentSelectorGroup, parent);
+      //need to constructthe array of parents here, to pass it to the next iteration
     });
-
-    currentElements = elements;
+    //AAAAAAAAAAAAAAAAAAAAAAAAAARGGGGH!!
+    elements = res;
   });
   return elements;
 };
+
+function checkAdjacentSelectors(selectors, parents) {
+  let result = [];
+  selectors.forEach((sel, i) => {
+    if (i === 0) {
+      result = singleSelector(sel, parents);
+    } else {
+      //filter out the elements that do not satisfy all the conditions
+      result = result.filter((e) => singleSelector(sel, parents).includes(e));
+    }
+  });
+  return result;
+}
 
 function singleSelector(string, element) {
   const name = string.slice(1);
@@ -49,6 +60,7 @@ function singleSelector(string, element) {
       return Array.from(element.getElementsByClassName(name));
     default:
       //console.log("in tagName " + string, element);
+      console.log("error here", element);
       return Array.from(element.getElementsByTagName(string));
   }
 }
@@ -56,9 +68,9 @@ function singleSelector(string, element) {
 // bit of a test suite to check if the engine can deal with descendant selectors (note that I had to defer the script load and make some changes to the html)
 
 function test(query) {
-  console.log("EXPECTED ", Array.from(document.querySelectorAll(query)));
-  console.log("GOT  ", $(query));
   console.log("--------------------------------");
+  console.log("EXPECTED ", Array.from(document.querySelectorAll(query)));
+  console.log("--GOT--  ", $(query));
 }
 
 test("div ul li.lorem");
