@@ -1,9 +1,9 @@
-/*The tests provided in the exercise could be completed with a much simpler engine than this, but then again, a selection engine that does not account for descendant selectors is probably not worth the name. I decided to implement that functionality and devised a couple tests for that purpose (Note that I had to slightly modify Test.html, namely defering the load of the js scripts and adding a couple nodes).
+/*The tests provided in the exercise could be completed with a much simpler engine than this, but then again, a selection engine that does not account for descendant selectors is probably not worth the name. I decided to implement that functionality and devised a couple of tests for that purpose (note that I had to slightly modify Test.html, namely deferring the load of the js scripts and adding a couple of nodes).
 
 The engine is far from perfect and it does not support the following non-exhaustive list:
-  Combinators other than the descendant combinator: (>, ~ , + ).
-  Attribute selector: [attr].
-  pseudo-classes and pseudo-elemnts.
+  *Combinators other than the descendant combinator: (>, ~ , + ).
+  *Attribute selector: [attr].
+  *Pseudo-classes and pseudo-elements.
   
 I decided to use modern javaScript where possible, substituted var for let, if backwards compatibility is an issue, it can be easily transpiled
 
@@ -96,7 +96,7 @@ const select = (group = [], targetNode = document) => {
       }
     }
   }
-  // Return the fndings of one adjacent selector
+  // Return the findings of one adjacent selector
 
   return _els;
 };
