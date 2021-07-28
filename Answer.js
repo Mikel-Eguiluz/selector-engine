@@ -2,75 +2,94 @@
 
 const $ = function (selector) {
   let elements = [];
+  // get descendant parts of the chain
+  let selectors = selector.split(" ");
+  // split adjacent/compound selectors into sub-arrays
+  selectors = selectors.map((selector) => {
+    if (selector.search(/(?=[\.#])/g)) {
+      return selector.split(/(?=[\.#])/g); // to transform 'div.class#id' into ['div', '.class' , #id]
+    }
+    return [selector]; // if singles, like 'li' then put in array
+  });
+  // For '.div#one li.classy p', selectors now looks like [['.div', '#one'], ['li', '.classy'], ['p']]
+  // loop thrugh the selector to find els
+  selectors.forEach((selectorGroup, i) => {
+    if (i === 0) {
+      elements.push(...select(selectorGroup)); // get initial elements. The test questions use this one because there are no descendants, (if no element is passed to select, it defaults to document)
+    } else {
+      // Now loop and drill for descendants, replacing parent nodes (similar to inside the select function but we replace...)
+      elements = [...elements.map((el) => select(selectorGroup, el))].flat();
+    }
+  });
 
-  //Split the selectors. First separate by space, getting all the descendant selectors
-  const selectors = selector.split(" ");
-  selectors.forEach((descendant, i) => {
-    //now, nested in that array another a array with  classnames, tagname and id, the aray should look like [[parent],[descendantTagName, descendantID, descendantClassName],etc]
-    selectors[i] = descendant.split(/(?=[\.#])/g);
-  });
-  // console.log(selectors);
-  let currentElements = [document];
-  selectors.forEach((adjacentSelectorGroup) => {
-    console.log("current elements", currentElements);
-    let res = [];
-    currentElements.forEach((parent) => {
-      res = checkAdjacentSelectors(adjacentSelectorGroup, parent);
-      console.log(
-        parent,
-        checkAdjacentSelectors(adjacentSelectorGroup, parent),
-      );
-      currentElements.concat(res);
-      //console.log(adjacentSelectorGroup, parent);
-      //need to constructthe array of parents here, to pass it to the next iteration
-    });
-    //AAAAAAAAAAAAAAAAAAAAAAAAAARGGGGH!!
-    elements = res;
-  });
+  // console.log("returning ", elements);
+
   return elements;
 };
 
-function checkAdjacentSelectors(selectors, parents) {
-  let result = [];
-  selectors.forEach((sel, i) => {
-    if (i === 0) {
-      result = singleSelector(sel, parents);
-    } else {
-      //filter out the elements that do not satisfy all the conditions
-      result = result.filter((e) => singleSelector(sel, parents).includes(e));
-    }
-  });
-  return result;
-}
-
-function singleSelector(string, element) {
-  const name = string.slice(1);
-  switch (string[0]) {
-    case "#":
-      //console.log("in ID " + string, element);
-      //element.getElementById() does not exist, only document has that method
-      if (element === document) {
-        return [document.getElementById(name)];
-      } else if (element.id === name) {
-        return [element];
+const select = (group = [], targetNode = document) => {
+  // console.log(targetNode, group);
+  const isSingleSelector = group.length === 1;
+  let _els = []; // place to hold elements whilst we 'filter down'
+  for (const [i, selector] of group.entries()) {
+    const firstCharacter = selector[0];
+    const label = selector.slice(1);
+    switch (firstCharacter) {
+      case "#": {
+        if (i === 0) {
+          // Find nodes
+          const el = targetNode.getElementById(label);
+          // if this is a single selector we bail
+          if (isSingleSelector) {
+            return [el];
+          }
+          // ...otherwise we add to temp aray
+          if (el) _els.push(el);
+        } else {
+          // Now, with the next parts of the selector, filter the array
+          _els = _els.filter((el) => el.id === label);
+        }
+        break;
       }
-      return [];
-    case ".":
-      //console.log("in class " + string, element);
-      return Array.from(element.getElementsByClassName(name));
-    default:
-      //console.log("in tagName " + string, element);
-      console.log("error here", element);
-      return Array.from(element.getElementsByTagName(string));
+      case ".": {
+        if (i === 0) {
+          const els = targetNode.getElementsByClassName(label);
+          if (isSingleSelector) {
+            return els;
+          }
+          if (els) _els.push(...els);
+        } else {
+          _els = _els.filter((el) => el.classList.contains(label));
+        }
+        break;
+      }
+      default: {
+        if (i === 0) {
+          const els = Array.from(targetNode.getElementsByTagName(selector));
+          if (isSingleSelector) {
+            return els;
+          }
+          if (els) _els.push(...els);
+        } else {
+          _els = _els.filter(({ tagName }) => tagName === selector);
+        }
+      }
+    }
   }
-}
+  // Return the fndings of one adjacent selector
+
+  return _els;
+};
 
 // bit of a test suite to check if the engine can deal with descendant selectors (note that I had to defer the script load and make some changes to the html)
 
 function test(query) {
   console.log("--------------------------------");
+  console.log("testing Query" + "");
   console.log("EXPECTED ", Array.from(document.querySelectorAll(query)));
   console.log("--GOT--  ", $(query));
 }
 
 test("div ul li.lorem");
+test("div ul li#liid");
+test("div>ul li#liid");
